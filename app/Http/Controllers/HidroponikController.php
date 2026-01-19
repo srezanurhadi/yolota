@@ -75,6 +75,7 @@ class HidroponikController extends Controller
         }
 
         // 3. Kirim Kedua Data ke View
+
         return view('hidroponik', [
             'result' => true,
             'image_url' => asset('uploads/' . $imageName),
@@ -83,6 +84,30 @@ class HidroponikController extends Controller
             'detections_local' => $localDetections,      // Data 1
             'detections_roboflow' => $roboflowDetections // Data 2
         ]);
+    }
+    // FUNGSI BARU: Jembatan ke Chatbot Python
+    public function chatPython(Request $request)
+    {
+        // 1. Validasi pesan tidak boleh kosong
+        $request->validate([
+            'message' => 'required|string',
+        ]);
+
+        try {
+            // 2. Tembak ke Python (Port 5000) endpoint /chat
+            $response = Http::post('http://127.0.0.1:5000/chat', [
+                'message' => $request->input('message')
+            ]);
+
+            // 3. Cek apakah Python berhasil menjawab
+            if ($response->successful()) {
+                return response()->json($response->json());
+            } else {
+                return response()->json(['reply' => 'Maaf, Python tidak merespon.'], 500);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['reply' => 'Error Laravel: ' . $e->getMessage()], 500);
+        }
     }
 
     private function normalizeRoboflowData($predictions)

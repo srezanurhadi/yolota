@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Hidroponik AI Dashboard</title>
 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -14,7 +16,6 @@
             font-family: 'Inter', sans-serif;
         }
 
-        /* Transisi halus untuk perpindahan tab */
         .fade-in {
             animation: fadeIn 0.3s ease-in-out;
         }
@@ -28,6 +29,24 @@
                 opacity: 1;
             }
         }
+
+        /* Scrollbar cantik untuk chat */
+        #chatContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #chatContainer::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        #chatContainer::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        #chatContainer::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     </style>
 </head>
 
@@ -37,7 +56,7 @@
 
         <div class="text-center mb-10">
             <h1 class="text-3xl md:text-4xl font-bold text-emerald-700 mb-2">🌱 Smart Hidroponik Monitor</h1>
-            <p class="text-gray-500">Dual Engine Analysis: Local Python & Roboflow Cloud</p>
+            <p class="text-gray-500">Dual Engine Analysis & AI Assistant</p>
         </div>
 
         @if (session('error'))
@@ -56,7 +75,7 @@
                         📸 Upload Gambar Tanaman
                     </h2>
 
-                    <form action="/detect" method="POST" enctype="multipart/form-data">
+                    <form action="/" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div
                             class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition bg-gray-50/50 group">
@@ -104,13 +123,10 @@
                             <div id="layer-local" class="fade-in">
                                 @foreach ($detections_local as $det)
                                     @php
-                                        // Rumus Persentase CSS
                                         $x = ($det['box']['x1'] / $image_width) * 100;
                                         $y = ($det['box']['y1'] / $image_height) * 100;
                                         $w = (($det['box']['x2'] - $det['box']['x1']) / $image_width) * 100;
                                         $h = (($det['box']['y2'] - $det['box']['y1']) / $image_height) * 100;
-
-                                        // Logika Warna Local (Hijau vs Merah)
                                         $isLayu = str_contains(strtolower($det['name']), 'layu');
                                         $borderColor = $isLayu ? 'border-red-500' : 'border-emerald-400';
                                         $bgColor = $isLayu ? 'bg-red-600' : 'bg-emerald-600';
@@ -132,8 +148,6 @@
                                         $y = ($det['box']['y1'] / $image_height) * 100;
                                         $w = (($det['box']['x2'] - $det['box']['x1']) / $image_width) * 100;
                                         $h = (($det['box']['y2'] - $det['box']['y1']) / $image_height) * 100;
-
-                                        // Logika Warna Roboflow (Biru vs Orange - Biar Beda)
                                         $isLayu = str_contains(strtolower($det['name']), 'layu');
                                         $borderColor = $isLayu ? 'border-orange-500' : 'border-blue-400';
                                         $bgColor = $isLayu ? 'bg-orange-600' : 'bg-blue-600';
@@ -169,39 +183,40 @@
 
                         <div id="jsonOutput"
                             class="hidden mt-4 p-4 bg-gray-900 text-green-400 text-xs rounded-lg overflow-x-auto h-48 font-mono border border-gray-700 shadow-inner">
-                            <div class="mb-2 text-gray-500 border-b border-gray-700 pb-1">RAW DATA (Local & Roboflow)
-                            </div>
+                            <div class="mb-2 text-gray-500 border-b border-gray-700 pb-1">RAW DATA</div>
                             <pre>Local Data: @json($detections_local, JSON_PRETTY_PRINT)</pre>
                             <hr class="border-gray-700 my-4">
                             <pre>Roboflow Data: @json($detections_roboflow, JSON_PRETTY_PRINT)</pre>
                         </div>
-
                     </div>
                 @endif
             </div>
 
             <div class="lg:col-span-1">
-                <div
-                    class="bg-white rounded-xl shadow-md flex flex-col h-full min-h-[500px] border border-gray-100 sticky top-6">
-                    <div class="p-4 border-b bg-gray-50 rounded-t-xl">
-                        <h2 class="font-semibold text-gray-700 flex items-center gap-2">
-                            🤖 Asisten AI
+                <div class="bg-white rounded-xl shadow-md flex flex-col h-[600px] border border-gray-100 sticky top-6">
+
+                    <div class="p-4 border-b bg-emerald-50 rounded-t-xl">
+                        <h2 class="font-semibold text-emerald-800 flex items-center gap-2">
+                            🤖 Asisten Hidroponik
                         </h2>
-                        <p class="text-xs text-gray-400">Tanyakan solusi perawatan...</p>
+                        <p class="text-xs text-emerald-600">Powered by Gemini AI (Laravel)</p>
                     </div>
 
-                    <div
-                        class="flex-1 p-4 bg-gray-50/50 flex flex-col items-center justify-center text-center text-gray-400 space-y-3">
-                        <div class="text-4xl">💬</div>
-                        <p class="text-sm italic">Fitur Chatbot LLM akan segera hadir.</p>
-                        <p class="text-xs">Nanti bisa otomatis membaca hasil deteksi di samping.</p>
+                    <div id="chatContainer" class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50">
+                        <div class="flex flex-col items-start">
+                            <div
+                                class="bg-white text-gray-800 p-3 rounded-r-xl rounded-bl-xl shadow-sm text-sm border border-gray-200">
+                                Halo! Saya Asisten AI. Ada yang bisa saya bantu mengenai tanaman hidroponik Anda? 🌱
+                            </div>
+                        </div>
                     </div>
 
                     <div class="p-4 border-t bg-white rounded-b-xl">
                         <div class="flex gap-2">
-                            <input type="text" placeholder="Ketik pertanyaan..." disabled
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm focus:outline-none cursor-not-allowed">
-                            <button disabled class="bg-emerald-600 opacity-50 text-white p-2 rounded-lg">
+                            <input type="text" id="chatInput" placeholder="Ketik pertanyaan..."
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50">
+                            <button id="btnSendChat" onclick="sendChat()"
+                                class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg transition">
                                 ➤
                             </button>
                         </div>
@@ -213,19 +228,16 @@
     </div>
 
     <script>
-        // Data dari PHP disimpan ke JS Variable untuk kebutuhan Download & Switcher
-        // Tanda ?? [] artinya kalau null diganti array kosong biar gak error
+        // Data PHP
         const dataLocal = @json($detections_local ?? []);
         const dataRoboflow = @json($detections_roboflow ?? []);
-
-        let currentMode = 'local'; // Default mode
+        let currentMode = 'local';
 
         // 1. PREVIEW GAMBAR
         function previewImage() {
             const input = document.getElementById('imageInput');
             const previewBox = document.getElementById('previewBox');
             const imgPreview = document.getElementById('imgPreview');
-
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -236,7 +248,7 @@
             }
         }
 
-        // 2. SWITCH TAB (LOCAL <-> ROBOFLOW)
+        // 2. SWITCH TAB
         function switchMode(mode) {
             currentMode = mode;
             const layerLocal = document.getElementById('layer-local');
@@ -246,91 +258,157 @@
             const countInfo = document.getElementById('count-info');
 
             if (mode === 'local') {
-                // Tampilkan Local
                 layerLocal.classList.remove('hidden');
                 layerRoboflow.classList.add('hidden');
-
-                // Style Tombol
                 btnLocal.classList.add('bg-white', 'shadow', 'text-emerald-700');
                 btnLocal.classList.remove('text-gray-500', 'hover:bg-white');
-
                 btnRoboflow.classList.remove('bg-white', 'shadow', 'text-emerald-700');
                 btnRoboflow.classList.add('text-gray-500', 'hover:bg-white');
-
                 countInfo.innerHTML = `Local: <strong>${dataLocal.length}</strong> objek ditemukan.`;
             } else {
-                // Tampilkan Roboflow
                 layerLocal.classList.add('hidden');
                 layerRoboflow.classList.remove('hidden');
-
-                // Style Tombol
                 btnRoboflow.classList.add('bg-white', 'shadow', 'text-emerald-700');
                 btnRoboflow.classList.remove('text-gray-500', 'hover:bg-white');
-
                 btnLocal.classList.remove('bg-white', 'shadow', 'text-emerald-700');
                 btnLocal.classList.add('text-gray-500', 'hover:bg-white');
-
                 countInfo.innerHTML = `Roboflow: <strong>${dataRoboflow.length}</strong> objek ditemukan.`;
             }
         }
 
-        // 3. DOWNLOAD HASIL (CANVAS DRAWING)
+        // 3. DOWNLOAD HASIL
         function downloadResult() {
-            // Tentukan data mana yang mau di-download berdasarkan tab aktif
             const activeData = (currentMode === 'local') ? dataLocal : dataRoboflow;
-
             const imgElement = document.getElementById('resultImage');
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-
-            // Set ukuran canvas SAMA dengan ukuran ASLI gambar
             canvas.width = imgElement.naturalWidth;
             canvas.height = imgElement.naturalHeight;
-
-            // 1. Gambar Foto Asli
             ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
-
-            // 2. Gambar Kotak & Text
             activeData.forEach(det => {
                 const box = det.box;
                 const name = det.name;
                 const conf = Math.round(det.confidence * 100) + '%';
                 const label = (currentMode === 'local' ? '' : 'RF: ') + `${name} ${conf}`;
-
-                // Tentukan Warna
                 const isLayu = name.toLowerCase().includes('layu');
-                let color;
-
-                if (currentMode === 'local') {
-                    color = isLayu ? '#ef4444' : '#10b981'; // Merah / Emerald
-                } else {
-                    color = isLayu ? '#f97316' : '#3b82f6'; // Orange / Biru
-                }
-
-                // Gambar Kotak
+                let color = (currentMode === 'local') ? (isLayu ? '#ef4444' : '#10b981') : (isLayu ? '#f97316' :
+                    '#3b82f6');
                 ctx.strokeStyle = color;
                 ctx.lineWidth = 4;
                 ctx.strokeRect(box.x1, box.y1, (box.x2 - box.x1), (box.y2 - box.y1));
-
-                // Gambar Background Label (DI DALAM KOTAK)
                 ctx.font = 'bold 24px Arial';
                 const textWidth = ctx.measureText(label).width;
-                const textHeight = 34;
-
                 ctx.fillStyle = color;
-                // Gambar kotak background text di pojok kiri atas (di dalam)
-                ctx.fillRect(box.x1, box.y1, textWidth + 12, textHeight);
-
-                // Gambar Teksnya
+                ctx.fillRect(box.x1, box.y1, textWidth + 12, 34);
                 ctx.fillStyle = 'white';
                 ctx.fillText(label, box.x1 + 6, box.y1 + 24);
             });
-
-            // Trigger Download
             const link = document.createElement('a');
             link.download = `hasil-${currentMode}-hidroponik.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
+        }
+
+        // ============================================
+        // 4. LOGIKA CHATBOT GEMINI (VIA LARAVEL)
+        // ============================================
+        const chatInput = document.getElementById('chatInput');
+        const chatContainer = document.getElementById('chatContainer');
+        const btnSendChat = document.getElementById('btnSendChat');
+
+        // Kirim pakai Enter
+        chatInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                sendChat();
+            }
+        });
+
+        async function sendChat() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Tampilkan Pesan User (Kanan)
+            appendMessage(message, 'user');
+
+            // Matikan input saat loading
+            chatInput.value = '';
+            chatInput.disabled = true;
+            btnSendChat.disabled = true;
+
+            // Tampilkan Loading Bubble
+            const loadingId = appendMessage("Sedang mengetik...", 'bot', true);
+
+            try {
+                // Ambil CSRF Token dari Meta Tag
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                // Tembak ke Route Laravel: /api/chat-laravel
+                const response = await fetch('/api/chat-python', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        message: message
+                    })
+                });
+
+                const data = await response.json();
+
+                // Hapus loading bubble
+                document.getElementById(loadingId).remove();
+
+                // Tampilkan Balasan Bot
+                if (data.reply) {
+                    // Convert newline (\n) jadi <br> agar rapi
+                    const formattedReply = data.reply.replace(/\n/g, '<br>');
+                    appendMessage(formattedReply, 'bot');
+                } else {
+                    appendMessage("Maaf, terjadi kesalahan pada respon AI.", 'bot');
+                }
+
+            } catch (error) {
+                if (document.getElementById(loadingId)) document.getElementById(loadingId).remove();
+                appendMessage("Gagal koneksi ke server Laravel.", 'bot');
+                console.error(error);
+            } finally {
+                chatInput.disabled = false;
+                btnSendChat.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        // Fungsi Membuat Bubble Chat
+        function appendMessage(text, sender, isLoading = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = (sender === 'user') ? "flex flex-col items-end" : "flex flex-col items-start";
+
+            const bubble = document.createElement('div');
+            const uniqueId = 'msg-' + new Date().getTime();
+            bubble.id = uniqueId;
+
+            // Style Tailwind untuk Bubble
+            if (sender === 'user') {
+                bubble.className = "bg-emerald-600 text-white p-3 rounded-l-xl rounded-tr-xl shadow-sm text-sm max-w-[85%]";
+            } else {
+                bubble.className =
+                    "bg-white text-gray-800 p-3 rounded-r-xl rounded-bl-xl shadow-sm text-sm border border-gray-200 max-w-[85%]";
+            }
+
+            if (isLoading) {
+                bubble.classList.add("italic", "text-gray-500");
+                bubble.innerHTML = '<span class="animate-pulse">⏳ ' + text + '</span>';
+            } else {
+                bubble.innerHTML = text;
+            }
+
+            wrapper.appendChild(bubble);
+            chatContainer.appendChild(wrapper);
+
+            // Auto Scroll ke bawah
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return uniqueId;
         }
     </script>
 </body>
