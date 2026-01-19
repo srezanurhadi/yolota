@@ -17,7 +17,7 @@ class HidroponikController extends Controller
         $request->validate([
             'image' => 'required|image|mimes:jpeg,png,jpg|max:10048',
         ]);
-
+        
         // 1. Simpan Gambar
         $image = $request->file('image');
         $imageName = time() . '.' . $image->getClientOriginalExtension();
